@@ -1,0 +1,11 @@
+[package]
+name = "bevy_mesh_decal"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+bevy = "0.14"
+
+[dev-dependencies]
+bevy_rapier3d = "0.27"
+bevy_fps_controller = "0.3"
