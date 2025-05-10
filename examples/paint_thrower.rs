@@ -175,6 +175,7 @@ fn setup(
         RenderPlayer { logical_entity },
     ));
 
+
     commands.insert_resource(MainScene {
         handle: assets.load("playground.glb"),
         is_loaded: false,
