@@ -6,8 +6,9 @@ Can be modified to use custom materials, animated sprites or a single texture sp
 
 # Examples
 
-Dynamic physics objects and complex meshes: [`examples/paint_thrower.rs`](./examples/paint_thrower.rs). Try 
-it out with `cargo run --example paint_thrower`.
+Apply decals to dynamic physics objects and complex meshes: [`examples/paint_thrower.rs`](./examples/paint_thrower.rs). 
+
+Try it out with `cargo run --example paint_thrower`.
 
 ![2025-05-10 21-02-34](https://github.com/user-attachments/assets/9bd3dbb2-a576-4a11-bf82-51dd8d9cde51)
 
