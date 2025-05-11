@@ -8,8 +8,9 @@ use bevy::render::render_resource::PrimitiveTopology;
 
 pub mod prelude;
 
-const DECAL_MAX_PER_ENTTIY: usize = 16;   // Max number of decals you can stick on one entity
-const DECAL_EPSILON: f32 = 0.00008;       // The offset of the decal from the base mesh, to prevent Z-fighting
+const DECAL_REMOVE_BACKFACES: bool = true; // When false, both sides of the mesh will be sprayed with a decal
+const DECAL_MAX_PER_ENTTIY: usize = 16;    // Max number of decals you can stick on one entity
+const DECAL_EPSILON: f32 = 0.00016;        // The offset of the decal from the base mesh, to prevent Z-fighting
 
 /// Decalable component. Add this to entities that you wish to apply decals onto.
 /// 
@@ -25,6 +26,7 @@ pub struct Decalable(usize); // Stores the number of decals already applied
 /// 
 /// ```
 /// spray_decal(
+///     &mut commands,
 ///     // Handle to your material
 ///     my_material.clone(),
 ///     // Transform of the decal. Will apply towards transform.forward(), 
@@ -41,7 +43,8 @@ pub struct Decalable(usize); // Stores the number of decals already applied
 /// The bounding box of the Decals transform must intersect
 /// with the vertices of the model it's being applied to, in
 /// world space. Decals will only be applied to entities
-/// with the Decalable component.
+/// with the Decalable component. This function will try to
+/// spray a decal only once after called.
 pub fn spray_decal(commands: &mut Commands, material: Handle<StandardMaterial>, transform: Transform) {
     // This entity will be removed once the decals has been applied
     commands.spawn((
@@ -91,6 +94,7 @@ fn is_inside_unit_cube (p: Vec3) -> bool {
     return p.x.abs() <= 1. && p.y.abs() <= 1. && p.z.abs() <= 1.;
 }
 
+// Create a new triangle between a, ab, ac
 fn new_triangle(
     a: Vertex, b: Vertex, c: Vertex,
     fa: f32, fb: f32, fc: f32,
@@ -109,6 +113,7 @@ fn new_triangle(
     );
 }
 
+// Create two new triangles between b, c, ab, ac
 fn new_quad(
     a: Vertex, b: Vertex, c: Vertex,
     fa: f32, fb: f32, fc: f32,
@@ -135,6 +140,7 @@ fn new_quad(
     );
 }
 
+// Attempt to slice the triangle along the plane defined by the axis-aligned normal
 fn slice(
     triangle: &mut Triangle,
     normal: Vec3,
@@ -144,7 +150,7 @@ fn slice(
     let fb = triangle.b.position.dot(normal);
     let fc = triangle.c.position.dot(normal);
 
-    if fa > 1. && fb > 1. && fc > 1. {
+    if fa > 1. && fb > 1. && fc > 1. { // Triangle is outside of the projection volume
         return true;
     }
 
@@ -218,9 +224,9 @@ fn apply_decal(
     let mut new_triangles = Vec::with_capacity(1024);
 
     for triangle in indices.chunks(3) {
-        let vA = Vec3::from(vertex_attribute[triangle[0] as usize]);
-        let vB = Vec3::from(vertex_attribute[triangle[1] as usize]);
-        let vC = Vec3::from(vertex_attribute[triangle[2] as usize]);
+        let vA = Vec3::from(vertex_attribute[triangle[0] as usize]) + Vec3::from(normal_attribute[triangle[0] as usize]) * offset;
+        let vB = Vec3::from(vertex_attribute[triangle[1] as usize]) + Vec3::from(normal_attribute[triangle[1] as usize]) * offset;
+        let vC = Vec3::from(vertex_attribute[triangle[2] as usize]) + Vec3::from(normal_attribute[triangle[2] as usize]) * offset;
 
         let pA = decal_proj.transform_point3(mesh_transform.transform_point(vA));
         let pB = decal_proj.transform_point3(mesh_transform.transform_point(vB));
@@ -247,9 +253,8 @@ fn apply_decal(
         let nC = inv_decal_transform.rotation * (mesh_transform.rotation * Vec3::from(normal_attribute[triangle[2] as usize])); 
 
         // Set this to false to apply the decal to both sides of the mesh.
-        let remove_backfaces = true;
 
-        if remove_backfaces {
+        if DECAL_REMOVE_BACKFACES {
             let normal = nA + nB + nC;
             if normal.z < 0. {
                 continue;
@@ -287,7 +292,7 @@ fn apply_decal(
         while output_triangles.len() > 0 {
             new_triangles.push(output_triangles.pop().unwrap());
         }
-
+  
     }
 
     let mut positions = Vec::with_capacity(4096);
@@ -311,51 +316,18 @@ fn apply_decal(
         index += 1;
     }
 
-    for i in 0..positions.len() {
-        positions[i] += normals[i] * offset;
-    }
-
-    // Optimize, remove duplicate vertices
-
-    let mut new_positions = Vec::with_capacity(1024);
-    let mut new_normals = Vec::with_capacity(1024);
-    let mut new_indices = Vec::with_capacity(1024);
-    let mut new_index: u16 = 0;
-
-    for &index in indices.iter() {
-        let mut found_closest = None;
-
-        for &previous in new_indices.iter() {
-            if positions[index as usize].distance_squared(new_positions[previous as usize]) <= 0.001 {
-                found_closest = Some(previous);
-                break;
-            }
-        }
-
-        if let Some(found_closest) = found_closest {
-            new_indices.push(found_closest);
-
-        //    new_positions[found_closest as usize] += normals[index as usize] * offset * 0.5;
-        } else {
-            new_positions.push(positions[index as usize]); // + normals[index as usize] * offset);
-            new_normals.push(normals[index as usize]);
-            new_indices.push(new_index);
-            new_index += 1;
-        }
-    }
-
-    if new_positions.len() == 0 {
+    if positions.len() == 0 {
         return None
     }
 
-    for i in 0..new_positions.len() {
-        uvs.push(Vec2::new(new_positions[i].x*0.5+0.5, new_positions[i].y*0.5+0.5));
+    for i in 0..positions.len() {
+        uvs.push(Vec2::new(positions[i].x*0.5+0.5, positions[i].y*0.5+0.5));
     }
 
     let mesh = Mesh::new(PrimitiveTopology::TriangleList, RenderAssetUsages::RENDER_WORLD)
         .with_inserted_attribute(
             Mesh::ATTRIBUTE_POSITION,
-            new_positions
+            positions
         )
         .with_inserted_attribute(
             Mesh::ATTRIBUTE_UV_0,
@@ -363,9 +335,9 @@ fn apply_decal(
         )
         .with_inserted_attribute(
             Mesh::ATTRIBUTE_NORMAL,
-            new_normals,
+            normals,
         )
-        .with_inserted_indices(Indices::U16(new_indices));
+        .with_inserted_indices(Indices::U16(indices));
     return Some(mesh)
 }
 

@@ -117,6 +117,52 @@ fn setup(
         ..default()
     });
 
+    commands.spawn((
+        RigidBody::Dynamic,
+        Collider::ball(1.),
+        SceneBundle {
+            scene: assets
+                .load(GltfAssetLabel::Scene(0).from_asset("sphere.glb")),
+            transform: Transform::from_translation(Vec3::Y * 10.),
+            ..default()
+        }
+    ));
+
+    // Spawn some spheres!
+
+    commands.spawn((
+        RigidBody::Dynamic,
+        Collider::ball(1.),
+        SceneBundle {
+            scene: assets
+                .load(GltfAssetLabel::Scene(0).from_asset("sphere.glb")),
+            transform: Transform::from_translation(Vec3::Y * 10.),
+            ..default()
+        }
+    ));
+
+    commands.spawn((
+        RigidBody::Dynamic,
+        Collider::ball(1.),
+        SceneBundle {
+            scene: assets
+                .load(GltfAssetLabel::Scene(0).from_asset("sphere.glb")),
+            transform: Transform::from_translation(Vec3::Y * 10. + Vec3::X * 5.),
+            ..default()
+        }
+    ));
+
+    commands.spawn((
+        RigidBody::Dynamic,
+        Collider::ball(1.),
+        SceneBundle {
+            scene: assets
+                .load(GltfAssetLabel::Scene(0).from_asset("sphere.glb")),
+            transform: Transform::from_translation(Vec3::Y * 10. + -Vec3::X * 5.).with_scale(Vec3::ONE * 3.),
+            ..default()
+        }
+    ));
+
     // Note that we have two entities for the player
     // One is a "logical" player that handles the physics computation and collision
     // The other is a "render" player that is what is displayed to the user
