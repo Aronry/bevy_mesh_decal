@@ -362,7 +362,8 @@ fn decal_system(
                     PbrBundle {
                         mesh: meshes.add(mesh).clone(),
                         material: decal.0.clone(),
-                        transform: Transform::from_matrix(mesh_transform.compute_matrix().inverse()).mul_transform(*transform), // Inverse stuff to make it work with Bevy's transform propagation
+                        // Inverse matrices to make it work with Bevy's transform propagation
+                        transform: Transform::from_matrix(mesh_transform.compute_matrix().inverse()).mul_transform(*transform), 
                         ..default()
                     },
                     NotShadowCaster,    // For extra performance

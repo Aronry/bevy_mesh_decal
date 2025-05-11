@@ -55,11 +55,14 @@ fn setup(
         tailwind::PURPLE_300,
     ];
 
+    // Load all the textures/materials we want to spray
+
     let textures = [
         assets.load("splatter1.png"),
         assets.load("splatter2.png"),
         assets.load("splatter3.png"),
     ];
+
 
     for i in 0..colors.len() {
         sprays.0.push(
@@ -107,6 +110,8 @@ fn setup(
         )
     );
 
+    // Add some light
+
     commands.spawn(DirectionalLightBundle {
         directional_light: DirectionalLight {
             illuminance: light_consts::lux::FULL_DAYLIGHT,
@@ -116,6 +121,9 @@ fn setup(
         transform: Transform::from_xyz(4.0, 7.0, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
         ..default()
     });
+
+
+    // Spawn some spheres!
 
     commands.spawn((
         RigidBody::Dynamic,
@@ -127,8 +135,6 @@ fn setup(
             ..default()
         }
     ));
-
-    // Spawn some spheres!
 
     commands.spawn((
         RigidBody::Dynamic,
