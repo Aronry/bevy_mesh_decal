@@ -18,7 +18,7 @@ Check out the [examples](./examples) for details. Tl;dr initialize the plugin wi
 ```rust
 app.add_plugin(DecalPlugin)
 ```
-and spawn sprites with
+and spawn decals with
 ```rust
 fn setup(
     mut commands: Commands,
