@@ -63,6 +63,9 @@ fn setup(
 
 ## Versioning
 
-| `bevy_sprite3d` version | `bevy` version |
-|-------------------------|----------------|
-| 1.0.0                   | 0.14           |
+| `bevy_mesh_decal` version | `bevy` version |
+|---------------------------|----------------|
+| 1.0.0                     | 0.14           |
+
+> [!TIP]
+> This code can easily be ported to most earler bevy versions
